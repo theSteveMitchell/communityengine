@@ -5,11 +5,11 @@ class FriendshipsController < BaseController
 
   def index
     @body_class = 'friendships-browser'
-
+    
     @user = (params[:id] ||params[:user_id]) ? User.find((params[:id] || params[:user_id] )): Friendship.find(:first).user
     @friendships = Friendship.find(:all, :conditions => ['user_id = ? OR friend_id = ?', @user.id, @user.id], :limit => 40)
-    @users = User.find(:all, :conditions => ['users.id in (?)', @friendships.collect{|f| f.friend_id }])
-
+    @users = User.find(:all, :conditions => ['users.id in (?)', @friendships.collect{|f| f.friend_id }])    
+    
     respond_to do |format|
       format.html
       format.xml { render :action => 'index.rxml', :layout => false}
@@ -47,9 +47,9 @@ class FriendshipsController < BaseController
   end
 
   def denied
-    @user = User.find(params[:user_id])
-    @friendships = @user.friendships.find(:all, :conditions => ["friendship_status_id = ?", FriendshipStatus[:denied].id], :page => {:current => params[:page]})
-
+    @user = User.find(params[:user_id])    
+    @friendships = @user.friendships.where("friendship_status_id = ?", FriendshipStatus[:denied].id).page(params[:page])
+    
     respond_to do |format|
       format.html
     end
@@ -60,9 +60,9 @@ class FriendshipsController < BaseController
     @user = User.find(params[:user_id])
     @friend_count = @user.accepted_friendships.count
     @pending_friendships_count = @user.pending_friendships.count
-
-    @friendships = @user.friendships.accepted.find :all, :page => {:size => 12, :current => params[:page], :count => @friend_count}
-
+          
+    @friendships = @user.friendships.accepted.page(params[:page]).per(12)
+    
     respond_to do |format|
       format.html
     end
@@ -97,7 +97,7 @@ class FriendshipsController < BaseController
 
     respond_to do |format|
       if @friendship.save && reverse_friendship.save
-        UserNotifier.deliver_friendship_request(@friendship) if @friendship.friend.notify_friend_requests?
+        UserNotifier.friendship_request(@friendship).deliver if @friendship.friend.notify_friend_requests?
         format.html {
           flash[:notice] = :friendship_requested.l_with_args(:friend => @friendship.friend.login)
           redirect_to accepted_user_friendships_path(@user)

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require 'test_helper'
 
 class AdminControllerTest < ActionController::TestCase
   fixtures :users, :categories, :roles
@@ -55,6 +55,14 @@ class AdminControllerTest < ActionController::TestCase
     login_as :admin
     get :clear_cache
     assert_redirected_to admin_dashboard_path
+  end
+  
+  test "should get subscribers xml" do
+    authorize_as :admin
+
+    get :subscribers, :format => :xml
+    assert_response :success
+    assert assigns(:users).any?
   end
 
 end

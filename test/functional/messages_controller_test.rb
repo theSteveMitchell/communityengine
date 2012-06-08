@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require 'test_helper'
 
 class MessagesControllerTest < ActionController::TestCase
   fixtures :messages, :users, :states, :roles
@@ -92,10 +92,12 @@ class MessagesControllerTest < ActionController::TestCase
   
   def test_should_get_show
     create_message(users(:florian),users(:leopoldo))
+    
     get :show, :id => Message.last.id, :user_id => users(:leopoldo).id
+    
     assert_response :success
     assert_equal assigns(:message).body, 'Some content'
-    assert_tag :tag=>'a', :attributes=>{:href=>"/leopoldo/messages/new?reply_to=#{Message.last.id}"}
+    assert_tag :tag=>'form', :attributes=>{:action=> user_messages_path(users(:leopoldo))}
   end
   
   def test_show_send_links_if_logged_in
@@ -143,10 +145,9 @@ class MessagesControllerTest < ActionController::TestCase
     end
   
     def should_mark_deleted(user)
-      @request.env['HTTP_REFERER'] = "#{user.login}/messages"
       create_message(users(:leopoldo),users(:florian))
       post :delete_selected, :delete => [Message.last.id], :user_id => user.id
-      assert_redirected_to "#{user.login}/messages"
+      assert_redirected_to user_messages_path(user)
     end
   
 
